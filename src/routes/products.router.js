@@ -1,31 +1,52 @@
 import { Router } from "express";
+import ProductManager from "../clases/productManager.js";
 
 const router = Router();
-let products = [
-    {id:1,nombre:'cocacola'},
-    {id:2,nombre:'sprite'},
-    {id:3,nombre:'sevenup'},
-    {id:4,nombre:'pepsi'}
-];
+const pm = new ProductManager();
 
 router.get('/', (req, res)=>{
-    let limit = req.query.limit;
-    if (!limit) {
-        return res.send({products})
-    }
-    let limitedProducts = products.slice(0,limit);
-    res.send({ limitedProducts });
+    let limit = req.query.limit || null;
+    let products = pm.getProducts(limit);
+    res.send({products});
 });
 
-router.get('/:id', (req, res)=>{
-    let id = req.params.id;
-    let product = products.find(product=>product.id == id); 
-    res.send({ product })
+router.get('/:pid', (req, res)=>{
+    let pid = req.params.pid;
+    let product = pm.getProductById(pid);
+    if (product) {
+        res.send({ product });
+    } else {
+        res.send({"estado": "ERROR", "mensaje": "No existe ningun producto en ese identificador"});        
+    }
 });
 
 router.post('/', (req, res)=>{
-    let body = req.body;
+    let {title, description, code, price, status, stock, category, thumbnails} = req.body;
+    let product = {title, description, code, price, status, stock, category, thumbnails};
+    if (pm.addProduct(product)) {
+        res.send({"estado": "OK", "mensaje": "El producto se agrego correctamente"}) 
+    } else {
+        res.send({"estado": "ERROR", "mensaje": "No se pudo agregar el producto"});        
+    }
+});
 
+router.put('/:pid', (req, res)=>{
+    let pid = req.params.pid;
+    let newProduct = req.body;
+    if(pm.updateProduct(pid, newProduct)){
+        res.send({"estado": "OK", "mensaje": "El producto se actualizo correctamente"});
+    }else{
+        res.send({"estado": "ERROR", "mensaje": "No se pudo modificar el producto"});        
+    }
+});
+
+router.delete('/:pid', (req, res)=>{
+    let pid = req.params.pid;
+    if(pm.deleteProduct(pid)){
+        res.send({"estado": "OK", "mensaje": "El producto se elimino correctamente"});
+    }else{
+        res.send({"estado": "ERROR", "mensaje": "No se pudo eliminar el producto"});        
+    }
 });
 
 export default router;
